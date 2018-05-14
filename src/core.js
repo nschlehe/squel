@@ -191,7 +191,7 @@ function _buildSquel(flavour = null) {
   */
 
   // Base class for cloneable builders
-  cls.Cloneable = class {
+  cls.Cloneable = class Clonable {
     /**
      * Clone this builder
      */
@@ -205,13 +205,15 @@ function _buildSquel(flavour = null) {
 
 
   // Base class for all builders
-  cls.BaseBuilder = class extends cls.Cloneable {
+  cls.BaseBuilder = class BaseBuilder extends cls.Cloneable {
     /**
      * Constructor.
      * this.param  {Object} options Overriding one or more of `cls.DefaultQueryBuilderOptions`.
      */
     constructor (options) {
       super();
+
+      this.expose = [];
 
       let defaults = JSON.parse(JSON.stringify(cls.DefaultQueryBuilderOptions));
       // for function values, etc we need to manually copy
@@ -719,11 +721,14 @@ function _buildSquel(flavour = null) {
    *
    * All the build methods in this object return the object instance for chained method calling purposes.
    */
-  cls.Expression = class extends cls.BaseBuilder {
+  cls.Expression = class Expression extends cls.BaseBuilder {
     // Initialise the expression.
     constructor (options) {
       super(options);
 
+      this.expose = this.expose.concat([
+        'and', 'or'
+      ]);
       this._nodes = [];
     }
 
@@ -810,7 +815,7 @@ function _buildSquel(flavour = null) {
    *
    * SQL cases are used to select proper values based on specific criteria.
    */
-  cls.Case = class extends cls.BaseBuilder {
+  cls.Case = class Case extends cls.BaseBuilder {
     constructor (fieldName, options = {}) {
       super(options);
 
@@ -826,6 +831,9 @@ function _buildSquel(flavour = null) {
 
       this.options = _extend({}, cls.DefaultQueryBuilderOptions, options);
 
+      this.expose = this.expose.concat([
+        'when', 'then', 'else'
+      ]);
       this._cases = [];
       this._elseValue = null;
     }
@@ -912,7 +920,7 @@ function _buildSquel(flavour = null) {
   #
   # Original idea posted in https://github.com/hiddentao/export/issues/10#issuecomment-15016427
   */
-  cls.Block = class extends cls.BaseBuilder {
+  cls.Block = class Block extends cls.BaseBuilder {
     constructor (options) {
       super(options);
     }
@@ -953,7 +961,7 @@ function _buildSquel(flavour = null) {
 
 
   // A fixed string which always gets output
-  cls.StringBlock = class extends cls.Block {
+  cls.StringBlock = class StringBlock extends cls.Block {
     constructor (options, str) {
       super(options);
 
@@ -971,10 +979,13 @@ function _buildSquel(flavour = null) {
 
 
   // A function string block
-  cls.FunctionBlock = class extends cls.Block {
+  cls.FunctionBlock = class FunctionBlock extends cls.Block {
     constructor (options) {
       super(options);
 
+      this.expose = this.expose.concat([
+        'function'
+      ]);
       this._strings = [];
       this._values = [];
     }
@@ -999,14 +1010,13 @@ function _buildSquel(flavour = null) {
   /*
   # Table specifier base class
   */
-  cls.AbstractTableBlock = class extends cls.Block {
+  cls.AbstractTableBlock = class AbstractTableBlock extends cls.Block {
     /**
      * @param {Boolean} [options.singleTable] If true then only allow one table spec.
      * @param {String} [options.prefix] String prefix for output.
      */
     constructor (options, prefix) {
       super(options);
-
       this._tables = [];
     }
 
@@ -1085,7 +1095,14 @@ function _buildSquel(flavour = null) {
 
 
   // target table for DELETE queries, DELETE <??> FROM
-  cls.TargetTableBlock = class extends cls.AbstractTableBlock {
+  cls.TargetTableBlock = class TargetTableBLock extends cls.AbstractTableBlock {
+    constructor (options) {
+      super (options);
+      this.expose = this.expose.concat([
+        'target'
+      ]);
+    }
+
     target (table) {
       this._table(table);
     }
@@ -1094,7 +1111,14 @@ function _buildSquel(flavour = null) {
 
 
   // Update Table
-  cls.UpdateTableBlock = class extends cls.AbstractTableBlock {
+  cls.UpdateTableBlock = class UpdateTableBlock extends cls.AbstractTableBlock {
+    constructor (options) {
+      super (options);
+      this.expose = this.expose.concat([
+        'table'
+      ]);
+    }
+
     table (table, alias = null) {
       this._table(table, alias);
     }
@@ -1110,11 +1134,14 @@ function _buildSquel(flavour = null) {
 
 
   // FROM table
-  cls.FromTableBlock = class extends cls.AbstractTableBlock {
+  cls.FromTableBlock = class FromTableBlock extends cls.AbstractTableBlock {
     constructor (options) {
       super(_extend({}, options, {
         prefix: 'FROM',
       }));
+      this.expose = this.expose.concat([
+        'from'
+      ]);
     }
 
     from (table, alias = null) {
@@ -1124,12 +1151,15 @@ function _buildSquel(flavour = null) {
 
 
   // INTO table
-  cls.IntoTableBlock = class extends cls.AbstractTableBlock {
+  cls.IntoTableBlock = class IntoTableBlock extends cls.AbstractTableBlock {
     constructor (options) {
       super(_extend({}, options, {
         prefix: 'INTO',
         singleTable: true,
       }));
+      this.expose = this.expose.concat([
+        'into'
+      ]);
     }
 
     into (table) {
@@ -1148,10 +1178,12 @@ function _buildSquel(flavour = null) {
 
 
   // (SELECT) Get field
-  cls.GetFieldBlock = class extends cls.Block {
+  cls.GetFieldBlock = class GetFieldBlock extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'fields', 'field'
+      ]);
       this._fields = [];
     }
 
@@ -1256,10 +1288,9 @@ function _buildSquel(flavour = null) {
 
 
   // Base class for setting fields to values (used for INSERT and UPDATE queries)
-  cls.AbstractSetFieldBlock = class extends cls.Block {
+  cls.AbstractSetFieldBlock = class AbstractSetFieldBlock extends cls.Block {
     constructor (options) {
       super(options);
-
       this._reset();
     }
 
@@ -1355,7 +1386,14 @@ function _buildSquel(flavour = null) {
 
 
   // (UPDATE) SET field=value
-  cls.SetFieldBlock = class extends cls.AbstractSetFieldBlock {
+  cls.SetFieldBlock = class SetFieldBlock extends cls.AbstractSetFieldBlock {
+    constructor (options) {
+      super (options)
+      this.expose = this.expose.concat([
+        'set', 'setFields'
+      ]);
+    }
+
     set (field, value, options) {
       this._set(field, value, options);
     }
@@ -1408,7 +1446,14 @@ function _buildSquel(flavour = null) {
 
 
   // (INSERT INTO) ... field ... value
-  cls.InsertFieldValueBlock = class extends cls.AbstractSetFieldBlock {
+  cls.InsertFieldValueBlock = class InsertFieldValueBlock extends cls.AbstractSetFieldBlock {
+    constructor (options) {
+      super(options);
+      this.expose = this.expose.concat([
+        'set', 'setFields', 'setFieldsRows'
+      ]);
+      this._reset();
+    }
     set (field, value, options = {}) {
       this._set(field, value, options);
     }
@@ -1461,10 +1506,12 @@ function _buildSquel(flavour = null) {
 
 
   // (INSERT INTO) ... field ... (SELECT ... FROM ...)
-  cls.InsertFieldsFromQueryBlock = class extends cls.Block {
+  cls.InsertFieldsFromQueryBlock = class InsertFieldsFromQueryBlock  extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'fromQuery'
+      ]);
       this._fields = [];
       this._query = null;
     }
@@ -1501,7 +1548,13 @@ function _buildSquel(flavour = null) {
 
 
   // DISTINCT
-  cls.DistinctBlock = class extends cls.Block {
+  cls.DistinctBlock = class DistinctBlock extends cls.Block {
+    constructor(options) {
+      super(options);
+      this.expose = this.expose.concat([
+        'distinct'
+      ]);
+    }
     // Add the DISTINCT keyword to the query.
     distinct () {
       this._useDistinct = true;
@@ -1518,10 +1571,12 @@ function _buildSquel(flavour = null) {
 
 
   // GROUP BY
-  cls.GroupByBlock = class extends cls.Block {
+  cls.GroupByBlock = class GroupByBlock extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'group'
+      ]);
       this._groups = [];
     }
 
@@ -1539,7 +1594,7 @@ function _buildSquel(flavour = null) {
   }
 
 
-  cls.AbstractVerbSingleValueBlock = class extends cls.Block {
+  cls.AbstractVerbSingleValueBlock = class AbstractVerbSingleValueBlock extends cls.Block {
     /**
      * @param options.verb The prefix verb string.
      */
@@ -1568,11 +1623,14 @@ function _buildSquel(flavour = null) {
 
 
   // OFFSET x
-  cls.OffsetBlock = class extends cls.AbstractVerbSingleValueBlock {
+  cls.OffsetBlock = class OffsetBlock extends cls.AbstractVerbSingleValueBlock {
     constructor(options) {
       super(_extend({}, options, {
         verb: 'OFFSET'
       }));
+      this.expose = this.expose.concat([
+        'offset'
+      ]);
     }
 
     /**
@@ -1588,11 +1646,14 @@ function _buildSquel(flavour = null) {
 
 
   // LIMIT
-  cls.LimitBlock = class extends cls.AbstractVerbSingleValueBlock {
+  cls.LimitBlock = class LimitBlock extends cls.AbstractVerbSingleValueBlock {
     constructor(options) {
       super(_extend({}, options, {
         verb: 'LIMIT'
       }));
+      this.expose = this.expose.concat([
+        'limit'
+      ]);
     }
 
     /**
@@ -1609,7 +1670,7 @@ function _buildSquel(flavour = null) {
 
 
   // Abstract condition base class
-  cls.AbstractConditionBlock = class extends cls.Block {
+  cls.AbstractConditionBlock = class AbstractConditionBlock extends cls.Block {
     /**
      * @param {String} options.verb The condition verb.
      */
@@ -1670,11 +1731,14 @@ function _buildSquel(flavour = null) {
 
 
   // WHERE
-  cls.WhereBlock = class extends cls.AbstractConditionBlock {
+  cls.WhereBlock = class WhereBlock extends cls.AbstractConditionBlock {
     constructor (options) {
       super(_extend({}, options, {
         verb: 'WHERE'
       }));
+      this.expose = this.expose.concat([
+        'where'
+      ]);
     }
 
     where (condition, ...values) {
@@ -1684,11 +1748,14 @@ function _buildSquel(flavour = null) {
 
 
   // HAVING
-  cls.HavingBlock = class extends cls.AbstractConditionBlock {
+  cls.HavingBlock = class HavingBlock extends cls.AbstractConditionBlock {
     constructor(options) {
       super(_extend({}, options, {
         verb: 'HAVING'
       }));
+      this.expose = this.expose.concat([
+        'having'
+      ]);
     }
 
     having (condition, ...values) {
@@ -1698,10 +1765,12 @@ function _buildSquel(flavour = null) {
 
 
   // ORDER BY
-  cls.OrderByBlock = class extends cls.Block {
+  cls.OrderByBlock = class OrderBlock extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'order'
+      ]);
       this._orders = [];
     }
 
@@ -1758,10 +1827,13 @@ function _buildSquel(flavour = null) {
 
 
   // JOIN
-  cls.JoinBlock = class extends cls.Block {
+  cls.JoinBlock = class JoinBlock extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'join', 'left_join', 'right_join', 'outer_join', 'left_outer_join',
+        'full_join', 'cross_join'
+      ]);
       this._joins = [];
     }
 
@@ -1871,10 +1943,12 @@ function _buildSquel(flavour = null) {
 
 
   // UNION
-  cls.UnionBlock = class extends cls.Block {
+  cls.UnionBlock = class UnionBlock extends cls.Block {
     constructor (options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'union', 'union_all'
+      ]);
       this._unions = [];
     }
 
@@ -1947,7 +2021,7 @@ function _buildSquel(flavour = null) {
   #
   # All the build methods in this object return the object instance for chained method calling purposes.
   */
-  cls.QueryBuilder = class extends cls.BaseBuilder {
+  cls.QueryBuilder = class QueryBuilder extends cls.BaseBuilder {
     /**
     # Constructor
     #
@@ -1958,26 +2032,22 @@ function _buildSquel(flavour = null) {
 
       this.blocks = blocks || [];
 
-      // Copy exposed methods into myself
-      for (let block of this.blocks) {
-        let exposedMethods = block.exposedMethods();
-
-        for (let methodName in exposedMethods) {
-          let methodBody = exposedMethods[methodName];
-
-          if (undefined !== this[methodName]) {
-            throw new Error(`Builder already has a builder method called: ${methodName}`);
+      this.blocks.forEach(block => {
+        block.expose.forEach(method => {
+          if (!block[method]) {
+            throw new Error(`Exposed method not found: ${method} ${block.constructor.name}`);
           }
 
-          ((block, name, body) => {
-            this[name] = (...args) => {
-              body.call(block, ...args);
+          if (this[method] !== undefined) {
+            throw new Error(`Builder already has a builder method called: ${method}`);
+          }
 
-              return this;
-            };
-          })(block, methodName, methodBody);
-        }
-      }
+          this[method] = (...args) => {
+            block[method].call(block, ...args);
+            return this;
+          }
+        });
+      });
     }
 
 
@@ -2074,7 +2144,7 @@ function _buildSquel(flavour = null) {
 
 
   // SELECT query builder.
-  cls.Select = class extends cls.QueryBuilder {
+  cls.Select = class Select extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'SELECT'),
@@ -2099,7 +2169,7 @@ function _buildSquel(flavour = null) {
 
 
   // UPDATE query builder.
-  cls.Update = class extends cls.QueryBuilder {
+  cls.Update = class Update extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'UPDATE'),
@@ -2119,7 +2189,7 @@ function _buildSquel(flavour = null) {
 
 
   // DELETE query builder.
-  cls.Delete = class extends cls.QueryBuilder {
+  cls.Delete = class Delete extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'DELETE'),
@@ -2142,7 +2212,7 @@ function _buildSquel(flavour = null) {
 
 
   // An INSERT query builder.
-  cls.Insert = class extends cls.QueryBuilder {
+  cls.Insert = class Insert extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'INSERT'),

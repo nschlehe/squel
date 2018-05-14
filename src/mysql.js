@@ -4,7 +4,16 @@ squel.flavours['mysql'] = function(_squel) {
   let cls = _squel.cls;
 
   // ON DUPLICATE KEY UPDATE ...
-  cls.MysqlOnDuplicateKeyUpdateBlock = class extends cls.AbstractSetFieldBlock {
+  cls.MysqlOnDuplicateKeyUpdateBlock = class MysqlOnDuplicateKeyUpdateBlock
+      extends cls.AbstractSetFieldBlock {
+
+    constructor(options) {
+      super(options);
+      this.expose = this.expose.concat([
+        'onDupUpdate'
+      ])
+    }
+
     onDupUpdate (field, value, options) {
       this._set(field, value, options);
     }
@@ -49,7 +58,7 @@ squel.flavours['mysql'] = function(_squel) {
 
 
   // INSERT query builder.
-  cls.Insert = class extends cls.QueryBuilder {
+  cls.Insert = class Insert extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'INSERT'),
@@ -64,7 +73,7 @@ squel.flavours['mysql'] = function(_squel) {
   }
 
   // REPLACE query builder.
-  cls.Replace = class extends cls.QueryBuilder {
+  cls.Replace = class Replace extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'REPLACE'),

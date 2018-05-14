@@ -33,6 +33,9 @@ test = testCreator()
 test['Custom queries'] =
   'custom query': ->
     class CommandBlock extends squel.cls.Block
+      constructor: (options) ->
+        super options
+        @expose = @expose.concat(['command', 'compress'])
       command: (command, arg) ->
         @_command = command
         @_arg = arg

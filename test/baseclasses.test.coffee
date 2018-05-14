@@ -989,8 +989,6 @@ test['QueryBuilder base class'] =
 
     'blocks passed in':
       'exposes block methods': ->
-        limitExposedMethodsSpy = test.mocker.spy(squel.cls.LimitBlock.prototype, 'exposedMethods');
-        distinctExposedMethodsSpy = test.mocker.spy(squel.cls.DistinctBlock.prototype, 'exposedMethods');
         limitSpy = test.mocker.spy(squel.cls.LimitBlock.prototype, 'limit')
         distinctSpy = test.mocker.spy(squel.cls.DistinctBlock.prototype, 'distinct')
 
@@ -1001,11 +999,9 @@ test['QueryBuilder base class'] =
 
         @inst = new @cls({}, blocks)
 
-        assert.ok limitExposedMethodsSpy.calledOnce
-        assert.ok distinctExposedMethodsSpy.calledOnce
-
         assert.typeOf @inst.distinct, 'function'
         assert.typeOf @inst.limit, 'function'
+
 
         assert.same @inst, @inst.limit(2)
         assert.ok limitSpy.calledOnce

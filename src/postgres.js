@@ -7,7 +7,16 @@ squel.flavours['postgres'] = function(_squel) {
   cls.DefaultQueryBuilderOptions.autoQuoteAliasNames = false;
   cls.DefaultQueryBuilderOptions.useAsForTableAliasNames = true;
 
-  cls.PostgresOnConflictKeyUpdateBlock = class extends cls.AbstractSetFieldBlock {
+  cls.PostgresOnConflictKeyUpdateBlock = class PostgresOnConflictKeyUpdateBlock
+      extends cls.AbstractSetFieldBlock {
+
+    constructor (options) {
+      super (options)
+      this.expose = this.expose.concat([
+        'onConflict'
+      ]);
+    }
+
     onConflict (conflictFields, fields) {
       this._onConflict = true;
       if (!conflictFields) {
@@ -76,6 +85,9 @@ squel.flavours['postgres'] = function(_squel) {
   cls.ReturningBlock = class extends cls.Block {
     constructor (options) {
       super(options);
+      this.expose = this.expose.concat([
+        'returning'
+      ])
       this._fields = [];
     }
 
@@ -134,9 +146,12 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // WITH
-  cls.WithBlock = class extends cls.Block {
+  cls.WithBlock = class WithBlock extends cls.Block {
     constructor (options) {
       super(options);
+      this.expose = this.expose.concat([
+        'with'
+      ])
       this._tables = [];
     }
 
@@ -166,10 +181,12 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // DISTINCT [ON]
-  cls.DistinctOnBlock = class extends cls.Block {
+  cls.DistinctOnBlock = class DistinctOnBlock extends cls.Block {
     constructor(options) {
       super(options);
-
+      this.expose = this.expose.concat([
+        'distinct'
+      ])
       this._distinctFields = [];
     }
 
@@ -201,7 +218,7 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // SELECT query builder.
-  cls.Select = class extends cls.QueryBuilder {
+  cls.Select = class Select extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.WithBlock(options),
@@ -225,7 +242,7 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // INSERT query builder
-  cls.Insert = class extends cls.QueryBuilder {
+  cls.Insert = class Insert extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.WithBlock(options),
@@ -242,7 +259,7 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // UPDATE query builder
-  cls.Update = class extends cls.QueryBuilder {
+  cls.Update = class Update extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.WithBlock(options),
@@ -261,7 +278,7 @@ squel.flavours['postgres'] = function(_squel) {
   }
 
   // DELETE query builder
-  cls.Delete = class extends cls.QueryBuilder {
+  cls.Delete = class Delete extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.WithBlock(options),

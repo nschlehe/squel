@@ -1064,6 +1064,7 @@ test['Blocks'] =
       class squel.cls.MockConditionBlock extends squel.cls.AbstractConditionBlock
         constructor: (options) ->
           super _.extend({}, options, {verb: 'MOCKVERB'})
+          @expose = @expose.concat(['mockCondition'])
 
         mockCondition: (condition, values...) ->
           @_condition condition, values...

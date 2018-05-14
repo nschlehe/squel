@@ -11,8 +11,8 @@ squel.flavours['mssql'] = function(_squel) {
   });
 
 
-  // LIMIT,  OFFSET x and TOP x
-  cls.MssqlLimitOffsetTopBlock = class extends cls.Block {
+  // LIMIT,  OFFSET x and TOP x
+  cls.MssqlLimitOffsetTopBlock = class MssqlLimitOffsetTopBlock extends cls.Block {
     constructor (options) {
       super(options);
       this._limits = null;
@@ -43,6 +43,9 @@ squel.flavours['mssql'] = function(_squel) {
         constructor (parent) {
           super(parent);
           this.limit = _limit;
+          this.expose = this.expose.concat([
+            'limit'
+          ]);
         }
 
         _toParamString () {
@@ -63,6 +66,9 @@ squel.flavours['mssql'] = function(_squel) {
         constructor (parent) {
           super(parent);
           this.top = _limit;
+          this.expose = this.expose.concat([
+            'top'
+          ]);
         }
         _toParamString () {
           let str = "";
@@ -79,6 +85,13 @@ squel.flavours['mssql'] = function(_squel) {
       };
 
       this.OffsetBlock = class extends this.ParentBlock {
+        constructor (options) {
+          super (options);
+          this.expose = this.expose.concat([
+            'offset'
+          ]);
+        }
+
         offset (start) {
           this._parent._offsets = this._sanitizeLimitOffset(start);
         }
@@ -87,7 +100,7 @@ squel.flavours['mssql'] = function(_squel) {
           let str = "";
 
           if (this._parent._offsets) {
-            str = `OFFSET ${this._parent._offsets} ROWS`; 
+            str = `OFFSET ${this._parent._offsets} ROWS`;
           }
 
           return {
@@ -96,6 +109,10 @@ squel.flavours['mssql'] = function(_squel) {
           }
         }
       };
+
+      this.expose = this.expose.concat([
+        'limit', 'top', 'offset'
+      ]);
     }
 
     LIMIT () {
@@ -112,7 +129,7 @@ squel.flavours['mssql'] = function(_squel) {
   };
 
 
-  cls.MssqlUpdateTopBlock = class extends cls.Block {
+  cls.MssqlUpdateTopBlock = class MssqlUpdateTopBlock extends cls.Block {
     constructor (options) {
       super(options);
       this._limits = null;
@@ -120,6 +137,10 @@ squel.flavours['mssql'] = function(_squel) {
       this.limit = this.top = (max) => {
         this._limits = this._sanitizeLimitOffset(max);
       };
+
+      this.expose = this.expose.concat([
+        'limit', 'top'
+      ]);
     }
 
     _toParamString () {
@@ -131,10 +152,15 @@ squel.flavours['mssql'] = function(_squel) {
   };
 
 
-  cls.MssqlInsertFieldValueBlock = class extends cls.InsertFieldValueBlock {
+  cls.MssqlInsertFieldValueBlock = class MssqlInsertFieldValueBlock
+      extends cls.InsertFieldValueBlock {
+
     constructor (options) {
       super(options);
       this._outputs = [];
+      this.expose = this.expose.concat([
+        'output'
+      ]);
     }
 
     // add fields to the output clause
@@ -164,10 +190,13 @@ squel.flavours['mssql'] = function(_squel) {
   };
 
 
-  cls.MssqlUpdateDeleteOutputBlock = class extends cls.Block {
+  cls.MssqlUpdateDeleteOutputBlock = class MssqlUpdateDeleteOutputBlock extends cls.Block {
     constructor (options) {
       super(options);
       this._outputs = [];
+      this.expose = this.expose.concat([
+        'outputs', 'output'
+      ]);
     }
 
 
@@ -230,7 +259,7 @@ squel.flavours['mssql'] = function(_squel) {
 
 
   // SELECT query builder.
-  cls.Select = class extends cls.QueryBuilder {
+  cls.Select = class Select extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       let limitOffsetTopBlock = new cls.MssqlLimitOffsetTopBlock(options);
 
@@ -258,7 +287,7 @@ squel.flavours['mssql'] = function(_squel) {
   // Order By in update requires subquery
 
   // UPDATE query builder.
-  cls.Update = class extends cls.QueryBuilder {
+  cls.Update = class Update extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'UPDATE'),
@@ -278,7 +307,7 @@ squel.flavours['mssql'] = function(_squel) {
   // Order By and Limit/Top in delete requires subquery
 
   // DELETE query builder.
-  cls.Delete = class extends cls.QueryBuilder {
+  cls.Delete = class Delete extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'DELETE'),
@@ -297,7 +326,7 @@ squel.flavours['mssql'] = function(_squel) {
 
 
   // An INSERT query builder.
-  cls.Insert = class extends cls.QueryBuilder {
+  cls.Insert = class Insert extends cls.QueryBuilder {
     constructor (options, blocks = null) {
       blocks = blocks || [
         new cls.StringBlock(options, 'INSERT'),
